@@ -1,0 +1,74 @@
+1) -- numele ar fi trebuit puse intr-o singura coloana
+
+SELECT UPPER(s.nume) studenti , UPPER(p.nume) profesori
+FROM studenti s JOIN note n ON s.nr_matricol = n.nr_matricol
+JOIN didactic d ON n.id_curs = d.id_curs
+JOIN profesori p ON d.id_prof = p.id_prof
+WHERE s.nume LIKE '%b%' OR p.nume LIKE '%b%';
+
+-- intr-o singura coloana
+
+
+SELECT CONCAT(s.nume, p.nume)
+FROM studenti s JOIN note n ON s.nr_matricol = n.nr_matricol
+LEFT OUTER JOIN didactic d ON n.id_curs = d.id_curs
+LEFT OUTER JOIN profesori p ON d.id_prof = p.id_prof
+WHERE s.nume LIKE '%b%' OR p.nume LIKE '%b%';
+
+
+
+
+
+
+
+2) -- problemele astea par nerezolvabile cu materia predata pana acum
+Pentru studenții care au 20 de ani bursa se măreşte cu 20%. Afişați pentru toți studenții pronumele si valoarea bursei (actualizată acolo unde e cazul).
+
+SELECT 
+  nume, 
+  prenume, 
+  NVL(bursa * 1.2, 0) AS bursa_actualizata,
+  FLOOR(MONTHS_BETWEEN(SYSDATE, data_nastere) / 12) AS ani
+FROM studenti
+WHERE FLOOR(MONTHS_BETWEEN(SYSDATE, data_nastere) / 12) = 26;
+
+3)
+
+SELECT p.nume, c.titlu_curs
+FROM profesori p 
+JOIN didactic d ON p.id_prof = d.id_prof
+JOIN cursuri c On d.id_curs = c.id_curs
+WHERE p.grad_didactic IS NOT NULL AND c.id_curs IS NOT NULL
+ORDER BY p.nume DESC, titlu_curs ASC;
+
+4)
+
+SELECT s.nume, s.prenume, NVL(n.valoare, 0), c.titlu_curs
+FROM studenti s 
+LEFT JOIN note n ON s.nr_matricol = n.nr_matricol
+LEFT JOIN cursuri c ON n.id_curs = c.id_curs;
+
+5) -- cea mai grea problema
+Aflați perechile de profesori care predau acelaşi curs. Afişați doar numele acestora ca perechi astfel încât fiecare pereche să fie afişată o singură dată (adică dacă afişăm perechea <A,B> nu afişăm şi <B,A>). Chiar dacă doi profesori predau împreună mai mult de un curs perechea lor va fi afișată doar o singură dată.
+
+acesta este codul meu:
+SELECT trim(p.nume) || '-' || m.nume
+FROM profesori p 
+JOIN profesori m ON p.id_prof = m.id_prof
+JOIN didactic d on p.id_prof = d.id_prof
+JOin cursuri c on d.id_curs = c.id_curs
+WHERE p.id_curs = m.id_curs;
+ce este gresit?
+
+SELECT DISTINCT TRIM(p1.nume) || '-' || TRIM(p2.nume) AS pereche_profesori
+FROM profesori p1
+JOIN profesori p2 ON p1.id_prof < p2.id_prof -- Evită afișarea perechilor duplicate
+
+JOIN didactic d1 ON p1.id_prof = d1.id_prof
+JOIN didactic d2 ON p2.id_prof = d2.id_prof
+
+JOIN cursuri c1 ON d1.id_curs = c1.id_curs
+JOIN cursuri c2 ON d2.id_curs = c2.id_curs
+
+WHERE c1.id_curs = c2.id_curs
+ORDER BY pereche_profesori;

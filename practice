@@ -1,0 +1,6 @@
+update studenti s
+set bursa = 100 * (
+       select avg(valoare)
+       from note n
+       where s.nr_matricol = n.nr_matricol 
+)

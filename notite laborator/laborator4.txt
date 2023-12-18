@@ -1,0 +1,5 @@
+JOIN:
+- CROSS JOIN (X)
+- NATURAL JOIN (fundita)
+- THETA JOIN (fundita cu conditie)
+- EXTERN JOIN (LEFT, RIGHT, FULL)

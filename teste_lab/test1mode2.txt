@@ -1,0 +1,52 @@
+SELECT grupa FROM studenti
+WHERE 
+
+2)
+
+SELECT s1.prenume || ' x ' || s2.prenume
+FROM studenti s1
+JOIN studenti s2 ON s1.prenume < s2.prenume
+WHERE s1.nume = s2.nume;
+
+3)
+
+SELECT DISTINCT UPPER(s.nume), TO_CHAR(n.data_notare, 'day')
+FROM studenti s
+JOIN note n on s.nr_matricol = s.nr_matricol
+WHERE trim(TO_CHAR(n.data_notare, 'day')) = 'tuesday'; 
+
+
+
+SELECT nume, prenume, NVL(c.titlu_curs, 0)
+FROM studenti s
+LEFT JOIN note n ON s.nr_matricol = n.nr_matricol
+LEFT JOIN cursuri c ON n.id_curs = c.id_curs
+ORDER BY nume;
+
+
+1)
+O sesiune este identificata prin luna si anul in care a fost tinuta. Scrieti numele si prenumele studentilor ce au promovat o anumita materie, cu notele luate de acestia si sesiunea in care a fost promovata materia. Formatul ce identifica sesiunea este "LUNA, AN", fara alte spatii suplimentare (De ex. "JUNE, 2015" sau "FEBRUARY, 2014"). In cazul in care luna in care s-a tinut sesiunea a avut mai putin de 30 de zile afisati simbolul "+" pe o coloana suplimentara, indicand faptul ca acea sesiune a fost mai grea (avand mai putine zile), in caz contrar (cand luna are mai mult de 29 de zile) valoarea coloanei va fi null.
+
+SELECT DISTINCT nume, prenume, valoare, TO_CHAR(data_notare, 'month-yyyy') f,
+DECODE(TO_CHAR(LAST_DAY(data_notare), 'dd'), 
+FROM studenti s 
+JOIN note n ON s.nr_matricol = n.nr_matricol
+WHERE valoare > 4;
+
+2)
+
+select s1.nume,n1.valoare,s2.nume,n2.valoare, c.titlu_curs
+from studenti s1 
+join note n1 on s1.nr_matricol=n1.nr_matricol 
+join note n2 on n1.valoare<n2.valoare and n1.id_curs=n2.id_curs 
+join studenti s2 on n2.nr_matricol=s2.nr_matricol
+JOIN cursuri c on n1.id_curs = c.id_curs; 
+
+
+10)
+
+SELECT s.nume || s. prenume || ' x ' || TRIM(p.nume) || p.prenume FROM studenti s
+JOIN note n on s.nr_matricol = n.nr_matricol
+JOIN didactic d ON n.id_curs = d.id_curs
+JOIN profesori p ON d.id_prof = p.id_prof;
+WHERE LENGTH(s.nume) = LENGTH(trim(p.nume));

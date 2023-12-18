@@ -1,0 +1,233 @@
+JOIN:
+- CROSS JOIN (X)
+- NATURAL JOIN (fundita)
+- THETA JOIN (fundita cu conditie)
+- EXTERN JOIN (LEFT, RIGHT, FULL)
+- SELF JOIN
+
+studenti:
+ NR_MATRICOL                               NOT NULL CHAR(6)
+ NUME                                               VARCHAR2(10)
+ PRENUME                                            VARCHAR2(10)
+ AN                                                 NUMBER(1)
+ GRUPA                                              CHAR(2)
+ BURSA                                              NUMBER(6,2)
+ DATA_NASTERE                                       DATE
+
+note: 
+ NR_MATRICOL                                        CHAR(6)
+ ID_CURS                                            CHAR(4)
+ VALOARE                                            NUMBER(2)
+ DATA_NOTARE                                        DATE
+
+cursuri:
+ ID_CURS                                   NOT NULL CHAR(4)
+ TITLU_CURS                                         VARCHAR2(15)
+ AN                                                 NUMBER(1)
+ SEMESTRU                                           NUMBER(1)
+ CREDITE                                            NUMBER(2)
+
+ ex:
+1) CROSS JOIN (produs cartezian):
+1. 13 studenti, 42 note => 546 note. Vreau catalogul cu note;
+SELECT * FROM studenti CROSS JOIN note; --  coloanele din cele 2 tabele au fost selectate
+SELECT * FROM studenti CROSS JOIN note WHERE studenti.NR_MATRICOL = note.NR_MATRICOL; 
+(doar 42 de note, linkuite cu studentii)
+
+2) NATURAL JOIN:
+SYN: FROM T1 NATULRAL JOIN T2;
+
+SELECT * FROM studenti NATULRAL JOIN note;
+echivalent cu:
+SELECT * FROM studenti CROSS JOIN note WHERE studenti.NR_MATRICOL = note.NR_MATRICOL; 
+(face join dupa coloanele cu aceasi denumire)
+(obtin toate coloanele fara duplicate, numar matricul apare o singura data)
+
+catalogul complet:
+SELECT * FROM studenti NATURAL JOIN note NATURAL JOIN cursuri;
+pentru ca intre studenti, note si cursuri am coloana an, a incercat sa faca natural join dupa acesta coloana si dupa id_cursuri
+-- tema: verifica pe tupluri datele
+-- fals: (ID_CURS din curs si ID_CURS din note au tipuri de date diferite) 
+
+how to fix this: 
+3) THETA(conditie in greaca) JOIN: 
+FROM T1 JOIN T2 ON conditii;
+
+catalogul studentilor:
+SELECT * FROM studenti 
+JOIN note ON studenti.nr_matricol = note.nr_matricol
+JOIN cursuri ON note.id_curs = cursuri.id_curs;
+
+SELECT nume, prenume, valoare, id_curs FROM studenti 
+JOIN note ON studenti.nr_matricol = note.nr_matricol
+JOIN cursuri ON note.id_curs = cursuri.id_curs;
+
+si pentru tabela profesori, didactic:
+SELECT studenti.nume, studenti.prenume, note.valoare, cursuri.TITLU_CURS FROM studenti 
+JOIN note ON studenti.nr_matricol = note.nr_matricol
+JOIN cursuri ON note.id_curs = cursuri.id_curs
+JOIN didactic ON cursuri.id_curs = didactic.id_curs
+JOIN profesori ON didactic.id_prof = profesori.id_prof;
+(pentru fiecare nota apar toti profesorii care predau cursul)
+
+4) EXTERN JOIN:
+FROM T1 LEFT/RIGHT/FULL JOIN T2 ON conditii;
+
+SELECT nume, prenume, studenti.nr_matricol, valoare 
+FROM studenti LEFT JOIN note ON studenti.nr_matricol = note.nr_matricol;
+
+echivalent cu:
+
+SELECT nume, prenume, studenti.nr_matricol, valoare 
+FROM note RIGHT JOIN studenti ON studenti.nr_matricol = note.nr_matricol;
+
+=> eroare ambiguitate
+fix: nr_matricol -> studenti.nr_matricol
+
+SELECT s.nume, s.prenume, s.nr_matricol, c.id_curs FROM studenti s
+RIGHT JOIN note n ON s.nr_matricol = n.nr_matricol
+LEFT JOIN cursuri c ON n.id_curs = c.id_curs;
+-- eroare
+
+STUDENTII CU NOTE SI CURSURILE AFERENTE DAR SI STUDENTII FARA NOTE:
+
+SELECT * FROM studenti s 
+LEFT JOIN note n on s.nr_matricol = n.nr_matricol
+LEFT JOIN cursuri c ON c.id_curs = n.id_curs;
+
+explicatie: am facut un singur left join, nu are cu ce sa echivaleze id_curs la studentii
+fara note.
+
+5) SELF JOIN (nu exist "SELF JOIN")
+
+SELECT nume, prenume
+FROM studenti JOIN studenti ..
+-- aflu colegii mai mici ca varsta pentru fiecare student (grupa identica, si t1.data_nastere 
+> t2.data_nastere):
+
+SELECT s.nume, s.prenume, s.grupa, s.data_nastere, colegi.nume, colegi.prenume, colegi.grupa,
+colegi.data_nastere
+FROM studenti s JOIN studenti colegi
+ON s.grupa = colegi.grupa 
+AND s.data_nastere > colegi.data_nastere;
+
+-- understand it better
+
+exercitii:
+1)
+
+ SELECT s.nume, s.prenume, p.nume, p.prenume 
+ FROM studenti s 
+ JOIN note n ON s.nr_matricol = n.nr_matricol
+ JOIN cursuri c on n.id_curs = c.id_curs
+ JOIN didactic d on c.id_curs = d.id_curs
+ JOIN profesori p ON d.id_prof = p.id_prof;
+
+ 2)
+
+ SELECT s.nume, s.prenume, c.titlu_curs, n.valoare 
+ FROM studenti s JOIN note n ON s.nr_matricol = n.nr_matricol
+ JOIN cursuri c ON n.id_curs = c.id_curs
+ WHERE c.titlu_curs = 'BD'
+ AND n.valoare = 10;
+
+ 3)
+
+SELECT p.nume, p.prenume, c.titlu_curs 
+FROM profesori p JOIN didactic d ON p.id_prof = d.id_prof
+JOIN cursuri c ON d.id_curs = c.id_curs;
+
+4)
+
+SELECT p.nume, p.prenume, c.titlu_curs, p.id_prof 
+FROM profesori p LEFT JOIN didactic d ON p.id_prof = d.id_prof
+LEFT JOIN cursuri c ON d.id_curs = c.id_curs;
+
+5)
+
+SELECT p.nume, p.prenume, c.titlu_curs
+FROM profesori p JOIN didactic d ON p.id_prof = d.id_prof
+RIGHT JOIN cursuri c ON d.id_curs = c.id_curs 
+WHERE d.id_prof IS NULL;
+
+6) -- de ce functioneaza? primul join returneaza toti profesorii
+
+SELECT p.nume, p.prenume, c.titlu_curs
+FROM profesori p LEFT JOIN didactic d ON p.id_prof = d.id_prof
+FULL JOIN cursuri c ON d.id_curs = c.id_curs 
+WHERE d.id_prof IS NULL;
+
+-- cu mai mult sens:
+
+SELECT p.nume, p.prenume, c.titlu_curs
+FROM profesori p 
+FULL JOIN didactic d ON p.id_prof = d.id_prof
+FULL JOIN cursuri c ON d.id_curs = c.id_curs 
+WHERE d.id_prof IS NULL OR d.id_curs IS NULL;
+
+7) -- pare mai greu, il las la sfarit
+
+8)
+
+SELECT s1.nume, n1.valoare, s2.nume, n2.valoare, c.titlu_curs FROM studenti s1
+JOIN studenti s2 ON s1.nr_matricol = s2.nr_matricol
+JOIN note n1 ON s1.nr_matricol = n1.nr_matricol
+JOIN note n2 ON n1.nr_matricol < n2.nr_matricol
+JOIN cursuri c on n1.id_curs = c.id_curs
+AND n1.id_curs = n2.id_curs;
+
+9)
+
+
+Afisati studentii doi cate doi impreuna cu diferenta de varsta dintre ei. 
+Sortati in ordine crescatoare in functie de aceste diferente. 
+Aveti grija sa nu comparati un student cu el insusi.
+
+
+
+SELECT s1.nume || s1.prenume || ' x ' || s2.nume || s2.prenume, floor(abs(s1.data_nastere - s2.data_nastere)) f
+FROM studenti s1
+JOIN studenti s2 on s1.nr_matricol > s2.nr_matricol
+ORDER BY f;
+
+
+
+
+
+
+10)
+
+SELECT s.nume, s.prenume, p.nume, p.prenume
+FROM studenti s CROSS JOIN profesori p
+WHERE LENGTH(s.nume) = LENGTH(p.nume);
+
+11) -- cursuri la care s-a luat maxim nota 8
+
+SELECT DISTINCT c.titlu_curs 
+FROM cursuri c JOIN note n ON c.id_curs = n.id_curs
+WHERE n.valoare <= 8;
+
+12)
+
+SELECT DISTINCT nume, prenume
+FROM studenti s JOIN note n ON s.nr_matricol = n.nr_matricol
+WHERE valoare >= 7;
+
+13)
+
+SELECT nume, prenume, valoare, titlu_curs
+FROM studenti s JOIN note n ON s.nr_matricol = n.nr_matricol
+JOIN cursuri c ON n.id_curs = c.id_curs 
+WHERE titlu_curs = 'OOP'
+AND (valoare = 7 OR valoare = 10);
+
+14)
+
+select s.nume, s.prenume, n.valoare, c.titlu_curs,
+TO_CHAR(data_notare, 'month-yyyy') sesiune, DECODE(TO_CHAR(LAST_DAY(DATA_NOTARE), 'dd'), 30, '+', 31, '+', '-')
+FROM studenti s
+JOIN note n ON s.nr_matricol = n.nr_matricol
+JOIN cursuri c ON n.id_curs = c.id_curs
+WHERE valoare > 4;
+
+select 

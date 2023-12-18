@@ -1,0 +1,103 @@
+1. where functioneaza doar la nivel de output dupa select, nu poti
+folosi functii in ramura where.
+2. group by colapseaza toate liniile dupa o anumita coloana,
+in cazul in caare valorea coloanei este egala.
+3. functiile de agregare au nevoie de group by, daca selectul afiseaza mai multe coloane, 
+pentru coloanele respective.
+
+1)
+
+SELECT COUNT(*) FROM studenti
+GROUP BY an;
+
+2)
+
+SELECT an, grupa, COUNT(*) FROM studenti
+GROUP BY an, grupa
+ORDER BY an, grupa;
+
+3)
+
+SELECT an, grupa, COUNT(*), COUNT(bursa) FROM studenti
+GROUP BY an, grupa
+ORDER BY an, grupa;
+
+4)
+
+5)
+
+SELECT AVG(SUM(NVL(bursa, 0))) "bursa/cap" FROM studenti
+GROUP BY nr_matricol;
+
+6)
+
+SELECT COUNT(valoare), valoare FROM note
+GROUP BY valoare;
+
+7)
+
+SELECT COUNT(valoare), TO_CHAR(data_notare, 'day') FROM note
+GROUP BY TO_CHAR(data_notare, 'day')
+ORDER BY COUNT(valoare);
+
+8)
+
+SELECT COUNT(valoare), TO_CHAR(data_notare, 'day') FROM note
+GROUP BY TO_CHAR(data_notare, 'day')
+ORDER BY TO_CHAR(data_notare, 'd');
+
+9)
+
+SELECT studenti.nr_matricol, AVG(valoare) FROM note
+JOIN studenti on note.nr_matricol = studenti.nr_matricol
+GROUP BY note.nr_matricol
+ORDER BY AVG(valoare) DESC;
+
+10)
+
+SELECT nvl(AVG(valoare), 0) FROM note
+GROUP BY nr_matricol
+ORDER BY nvl(AVG(valoare), 0);
+
+11)
+
+SELECT NVL(valoare, 0) FROM note
+where valoare is null
+GROUP BY nr_matricol;
+
+13)Afișați numele, cea mai mare notă, cea mai mică notă și media doar pentru acei studenti care au primit doar note mai mari sau egale cu 7 (au cea mai mică notă mai mare sau egală cu 7).
+
+SELECT s.nume, s.prenume, MAX(n.valoare) as max_valoare, MIN(n.valoare) as min_valoare,
+       AVG(n.valoare) as avg_valoare
+FROM studenti s
+JOIN note n ON s.nr_matricol = n.nr_matricol
+GROUP BY s.nume, s.prenume, s.nr_matricol
+HAVING MIN(valoare) < 6;
+
+14)Afișați numele și mediile studenților care au cel puțin un număr de 3 note puse în catalog.
+
+SELECT s.nume, s.prenume, AVG(valoare) FROM studenti s
+JOIN note n on s.nr_matricol = n.nr_matricol
+GROUP BY s.nume, s.prenume, s.nr_matricol
+HAVING COUNT(valoare) > 2;
+
+15)
+
+SELECT nume, prenume, avg(valoare) FROM studenti s
+JOIN note n on s.nr_matricol = n.nr_matricol
+GROUP BY nume, prenume, s.nr_matricol
+HAVING COUNT(DISTINCT valoare) > 2;
+
+16)
+
+SELECT nume, avg(valoare) FROM studenti s
+JOIN note n on s.nr_matricol = n.nr_matricol
+WHERE an = 3 AND grupa = 'A2'
+GROUP BY nume, prenume, s.nr_matricol;
+
+17)
+
+SELECT nume as sef_p, avg(valoare) FROM studenti s
+JOIN note n1 on s.nr_matricol = n1.nr_matricol
+ORDER BY valoare
+GROUP BY nume, prenume, s.nr_matricol;

@@ -1,0 +1,51 @@
+1) Afisati numarul de cursuri si numarul de credite diferite.
+
+SELECT COUNT(DISTINCT id_curs), COUNT(DISTINCT credite)
+FROM cursuri;
+
+2) Afisati grupele in care media tuturor studentilor este mai mare de 7.
+
+SELECT an, grupa, TRUNC(AVG(valoare), 2)
+FROM studenti s
+JOIN note n ON s.nr_matricol = n.nr_matricol
+GROUP BY an, grupa
+HAVING AVG(valoare) > 7;
+
+3) Afisati titlul cursurilor pentru care numarul de studenti notati este maxim.
+--- mai exerseaza
+
+SELECT titlu_curs
+FROM cursuri 
+WHERE id_curs IN (
+       SELECT id_curs
+       FROM note 
+       GROUP BY id_curs
+       HAVING COUNT(id_curs) = (
+              SELECT MAX(COUNT(id_curs))
+              FROM note
+              GROUP BY id_curs
+       )
+);
+
+4) Afisati numele si prenumele celor mai tineri 3 studenti.
+--- o simpla sortare
+
+SELECT *
+FROM (
+       SELECT nume, prenume, data_nastere
+       FROM studenti 
+       ORDER BY data_nastere DESC
+)
+WHERE ROWNUM <= 3;
+
+5) Actualizeaza tabela studenti in asa fel incat toti studentii care au macar o nota de 10 sa primeasca 100 de lei in plus. Daca studentul nu primea bursa deloc, si are cel putin o nota de 10, acesta va avea bursa de 100 de lei.
+
+UPDATE studenti
+SET bursa = NVL(bursa, 0) + 100
+WHERE nr_matricol IN (
+       SELECT s.nr_matricol
+       FROM studenti s
+       JOIN note n ON s.nr_matricol = n.nr_matricol
+       GROUP BY nume, prenume, s.nr_matricol
+       HAVING MAX(valoare) = 10
+);

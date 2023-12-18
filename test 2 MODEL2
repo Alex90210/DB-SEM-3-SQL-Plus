@@ -1,0 +1,58 @@
+1) Afisati cate grupe diferite exista. -- grupe sau nume de grupe?
+
+--- numar de grupe distincte
+SELECT COUNT(DISTINCT grupa || an)
+FROM studenti;
+
+--- numar de denumiri de grupa distincte
+
+SELECT COUNT(DISTINCT grupa)
+FROM studenti;
+
+2) Afisati mediile studentilor care sunt in anul 2 si au promovat toate materiile.
+
+-- La afisare de medie foloseste intodeauna TRUNC
+
+-- Non-Aggregated Columns in HAVING: You generally cannot use non-aggregated columns that are not part of the GROUP BY clause directly in the HAVING clause. Doing so will typically result in an error because, after grouping, these columns do not have a single, well-defined value per group. 
+
+SELECT nume, prenume, TRUNC(AVG(valoare), 2), MIN(valoare)
+FROM studenti s
+JOIN note n ON s.nr_matricol = n.nr_matricol
+GROUP BY an, nume, prenume, s.nr_matricol
+HAVING an = 2 -- orice e in having trebuie sa fie si in group by
+AND MIN(valoare) >= 5;
+
+3) Afisati studentii cu cea mai mare medie.
+--- tot ce ai in select trebuie sa fie si in group by
+
+SELECT nume, prenume
+FROM studenti s
+JOIN note n 
+ON s.nr_matricol = n.nr_matricol
+GROUP BY nume, prenume, s.nr_matricol
+HAVING AVG(valoare) = (
+       SELECT MAX(AVG(valoare))
+       FROM note
+       GROUP BY nr_matricol
+);
+
+4) Afisati primele cele mai mari burse diferite.
+
+SELECT *
+FROM (
+       SELECT DISTINCT bursa
+       FROM studenti
+       WHERE bursa IS NOT NULL
+       ORDER BY bursa DESC
+)
+WHERE ROWNUM <= 2;
+
+5) Actualizeaza tabelul note in asa fel incat valoare sa fie valoarea * numarul de credite.
+--- related subquery
+
+UPDATE note 
+SET valoare = valoare * (
+       SELECT credite 
+       FROM cursuri
+       WHERE note.id_curs = cursuri.id_curs
+);

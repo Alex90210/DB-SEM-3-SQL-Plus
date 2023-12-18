@@ -1,0 +1,5 @@
+1) Notele distincte de la cursul cu id-ul 24.
+
+SELECT DISTINCt valoare
+FROM note 
+WHERE id_curs = 24;

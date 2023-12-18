@@ -1,0 +1,52 @@
+Exercitii seminar:
+
+1) Cum poate fi utilizată o secvență la inserare? Răspundeți creând o secvență care sa vă ajute sa inserați noi cursuri cu id unic, cu intrari consecutive crescătoare cu pasul 1. Inserati 3 cursuri noi cu id-ul generat de secventa.
+
+2) Actualizati valoarea bursei pentru studentii care au măcar o notă de 10. Acestia vor primi ca bursa 500RON.
+
+UPDATE studenti
+SET bursa = 500
+WHERE nr_matricol IN (
+       SELECT nr_matricol
+       FROM note
+       WHERE valoare = 10
+);
+
+subselect corelat:
+
+UPDATE studenti s
+SET bursa = 500
+WHERE EXISTS (
+       SELECT 'BRUH'
+       FROM note n
+       WHERE valoare = 10 
+       AND s.nr_matricol = n.nr_matricol 
+);
+
+3) Toti studentii primesc o bursa egala cu 100*media notelor lor. Efectuati modificarile necesare.
+
+UPDATE studenti s
+SET bursa = 100 * (
+       SELECT AVG(valoare)
+       FROM note n
+       WHERE s.nr_matricol = n.nr_matricol
+       GROUP BY nume, prenume, nr_matricol
+);
+
+->media notelor:
+
+SELECT nume, prenume, AVG(valoare)
+FROM studenti s
+JOIN note n ON s.nr_matricol = n.nr_matricol
+GROUP BY nume, prenume, s.nr_matricol;
+
+4)
+
+DELETE FROM studenti s
+WHERE NOT EXISTS (
+       SELECT 'BRUH'
+       FROM note n
+       GROUP BY nume, prenume, n.nr_matricol
+       HAVING AVG(valoare) > 0 
+       AND s.nr_matricol = n.nr_matricol
+);

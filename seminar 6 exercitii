@@ -1,0 +1,164 @@
+1)
+
+SELECT COUNT(nume), an FROM studenti
+GROUP BY an;
+
+2)
+
+SELECT COUNT(nume), grupa, an FROM studenti
+GROUP BY an, grupa
+ORDER BY an, grupa;
+
+3)
+
+SELECT COUNT(nume), COUNT(bursa) bursieri, grupa, an
+FROM studenti
+GROUP BY an, grupa
+ORDER BY an, grupa;
+
+4)
+
+SELECT SUM(bursa) FROM studenti;
+
+5)
+
+SELECT ROUND(AVG(NVL(bursa, 0)), 2) "cost/student"
+FROM studenti;
+
+6)
+
+SELECT COUNT(*), valoare 
+FROM note
+GROUP BY valoare
+ORDER BY valoare DESC;
+
+7)
+
+SELECT COUNT(*) nr_note, TO_CHAR(data_notare, 'Day') zi_notare
+FROM note
+GROUP BY TO_CHAR(data_notare, 'Day')
+ORDER BY nr_note DESC;
+
+8)
+
+SELECT COUNT(*) nr_note, TO_CHAR(data_notare, 'Day') zi_notare,
+TO_CHAR(data_notare, 'D') nr_zi_notare
+FROM note
+GROUP BY TO_CHAR(data_notare, 'Day'), TO_CHAR(data_notare, 'D')
+ORDER BY TO_CHAR(data_notare, 'D');
+
+9)
+
+SELECT nume, ROUND(AVG(valoare), 2), COUNT(*)
+FROM studenti s 
+JOIN note n ON s.nr_matricol = n.nr_matricol
+GROUP BY nume, prenume, s.nr_matricol
+ORDER BY AVG(valoare) DESC;
+
+10)
+
+SELECT nume, ROUND(AVG(valoare), 2) avg_medie, COUNT(*) nr_note
+FROM studenti s 
+LEFT JOIN note n ON s.nr_matricol = n.nr_matricol
+GROUP BY nume, prenume, s.nr_matricol
+ORDER BY AVG(valoare) DESC;
+
+11)
+
+SELECT nume, ROUND(AVG(NVL(valoare, 0)), 2) avg_medie, COUNT(*) nr_note
+FROM studenti s 
+LEFT JOIN note n ON s.nr_matricol = n.nr_matricol
+GROUP BY nume, prenume, s.nr_matricol
+ORDER BY AVG(valoare) DESC;
+
+12)
+
+SELECT nume, ROUND(AVG(NVL(valoare, 0)), 2) avg_medie, COUNT(*) nr_note
+FROM studenti s 
+LEFT JOIN note n ON s.nr_matricol = n.nr_matricol
+GROUP BY nume, prenume, s.nr_matricol
+HAVING AVG(valoare) > 8
+ORDER BY AVG(valoare) DESC;
+
+13)
+
+SELECT nume, 
+       MIN(valoare) "cea mai mica nota", 
+       MAX(valoare) "cea mai mare nota",
+       TRUNC(AVG(valoare), 2) "medie note"
+FROM studenti s 
+JOIN note n ON s.nr_matricol = n.nr_matricol
+GROUP BY nume, s.nr_matricol
+HAVING MIN(valoare) >= 7
+ORDER BY "medie note" DESC;
+
+14)
+
+SELECT nume, 
+       TRUNC(AVG(valoare), 2) "medie note",
+       COUNT(valoare) "numar note"
+FROM studenti s
+JOIN note n ON s.nr_matricol = n.nr_matricol
+GROUP BY nume, s.nr_matricol
+HAVING COUNT(valoare) >= 3
+ORDER BY AVG(valoare) DESC;
+
+15)
+
+SELECT nume, 
+       TRUNC(AVG(valoare), 2) "medie note",
+       COUNT(valoare) "numar note"
+FROM studenti s
+JOIN note n ON s.nr_matricol = n.nr_matricol
+GROUP BY nume, s.nr_matricol
+HAVING COUNT(DISTINCT valoare) >= 3
+ORDER BY AVG(valoare) DESC;
+
+16)
+
+SELECT nume, TRUNC(AVG(valoare), 2) "medie note"
+FROM studenti s 
+LEFT JOIN note n ON s.nr_matricol = n.nr_matricol
+GROUP BY nume, s.nr_matricol, grupa, an
+HAVING (grupa = 'A2' AND an = 3);
+
+-- this has more sense:
+
+SELECT nume, TRUNC(AVG(valoare), 2) "medie note"
+FROM studenti s 
+LEFT JOIN note n ON s.nr_matricol = n.nr_matricol
+WHERE (grupa = 'A2' AND an = 3)
+GROUP BY nume, s.nr_matricol;
+
+17)
+
+SELECT TRUNC(MAX(AVG(valoare)), 2)
+FROM studenti s 
+JOIN note n ON s.nr_matricol = n.nr_matricol
+GROUP BY nume, prenume, s.nr_matricol;
+-- nu pot sa folosesc group by de pentru a grupa de 2 ori
+-- nu inteleg bine explicatia, trebuie sa revin aici
+
+18)
+
+SELECT TRUNC(AVG(valoare), 2)
+FROM note n
+LEFT JOIN didactic d ON n.id_curs = d.id_curs
+LEFT JOIN profesori p ON d.id_prof = p.id_prof
+GROUP BY nume, prenume, p.id_prof
+ORDER BY AVG(valoare) DESC;
+-- error: DECODE(AVG(valoare), AVG(valoare) > 7, 'iubit', avg(valoare), 'mai putin iubit')
+
+19)
+Afisati numarul de restantieri generati de FIECARE profesor (tip: 1 cu 2 restantieri, 4 cu 1 restantier, 11 cu 0 restantieri)
+
+SELECT COUNT(*), restantieri
+FROM (
+       SELECT COUNT(*), COUNT(n.valoare) restantieri
+       FROM profesori p
+       LEFT JOIN didactic d ON p.id_prof = d.id_prof
+       LEFT JOIN note n ON d.id_curs = n.id_curs AND n.valoare < 5
+       GROUP BY p.nume, p.prenume, p.id_prof
+       ORDER BY restantieri DESC
+)
+GROUP BY restantieri;

@@ -1,0 +1,143 @@
+Dacă subinterogarea returnează o singură linie rezultat, 
+operatorul poate fi unul standard precum >, =, >=, <, <>, <=. 
+Dacă subinterogarea returnează mai multe linii rezultat 
+se utilizează operatori specifici precum IN, ALL, ANY, SOME.
+
+1)
+
+SELECT nume, prenume, bursa
+FROM studenti s 
+where bursa = (
+       SELECT MAX(bursa)
+       FROM studenti
+);
+
+2)
+
+SELECT nume, prenume, an, grupa 
+FROM studenti s 
+WHERE nume != 'Arhire' AND (grupa, an) IN (
+       SELECT grupa, an 
+       FROM studenti 
+       WHERE nume = 'Arhire'
+)
+GROUP BY nume, prenume, an, grupa;
+
+3)
+
+SELECT nume, prenume, valoare, grupa
+FROM studenti s
+JOIN note n on s.nr_matricol = n.nr_matricol
+WHERE (an, grupa, valoare) IN (
+       SELECT an, grupa, MIN(valoare)
+       FROM studenti s
+       JOIN note n on s.nr_matricol = n.nr_matricol
+       GROUP BY an, grupa
+       )
+GROUP BY nume, prenume, s.nr_matricol, grupa, valoare
+ORDER BY grupa;
+
+4)
+
+SELECT nume, prenume, TRUNC(AVG(valoare), 2) medie_note
+FROM studenti s
+JOIN note n ON s.nr_matricol = n.nr_matricol
+GROUP BY nume, prenume, s.nr_matricol
+HAVING AVG(valoare) > (
+       SELECT AVG(valoare)
+       FROM note
+);
+
+select nume, prenume, trunc(avg(valoare),1) as medie from studenti, note 
+where trunc(avg(valoare),1) > 
+(select trunc(avg(valoare),1) from note) 
+group by nume, prenume, studenti.nr_matricol
+
+5)
+
+SELECT *
+FROM (
+       SELECT nume, TRUNC(AVG(valoare), 2) medie_note
+       FROM studenti s 
+       JOIN note n ON s.nr_matricol = n.nr_matricol
+       GROUP BY nume, prenume, s.nr_matricol
+       ORDER BY AVG(valoare) DESC
+)
+WHERE ROWNUM < 4;
+
+6)
+
+SELECT nume, prenume, TRUNC(AVG(valoare), 2) AS medie_note
+FROM studenti s 
+JOIN note n ON s.nr_matricol = n.nr_matricol
+GROUP BY nume, prenume, s.nr_matricol
+HAVING TRUNC(AVG(valoare), 2) = (
+       SELECT MAX(medie)
+       FROM (
+             SELECT TRUNC(AVG(valoare), 2) AS medie
+             FROM studenti s
+             JOIN note n ON s.nr_matricol = n.nr_matricol
+             GROUP BY nume, prenume, s.nr_matricol
+             ORDER BY AVG(valoare) DESC
+       )
+);
+
+7)
+
+SELECT nume, prenume, valoare
+FROM studenti s
+JOIN note n ON s.nr_matricol = n.nr_matricol
+JOIN cursuri c ON n.id_curs = c.id_curs
+WHERE (titlu_curs = 'Logica' AND s.nr_matricol != 118
+AND valoare = (
+       SELECT valoare
+       FROM studenti s 
+       JOIN note n ON s.nr_matricol = n.nr_matricol
+       JOIN cursuri c ON n.id_curs = c.id_curs
+       WHERE ((nume = 'Ciobotariu' AND prenume = 'Ciprian')
+       AND titlu_curs = 'Logica')
+));
+
+8)
+
+SELECT * 
+FROM (
+       SELECT *
+       FROM (
+              SELECT prenume 
+              FROM studenti 
+              ORDER BY prenume
+       )
+       WHERE ROWNUM < 6
+       ORDER BY prenume DESC
+)
+WHERE ROWNUM < 2;
+
+9)
+
+SELECT *
+FROM (
+       SELECT *
+       FROM (
+              SELECT nume, prenume, s.nr_matricol, 
+                     s.an, grupa, data_nastere, bursa,
+                     SUM(valoare * credite) puncte
+              FROM studenti s
+              LEFT JOIN note n ON s.nr_matricol = n.nr_matricol
+              LEFT JOIN cursuri c ON n.id_curs = c.id_curs
+              GROUP BY nume, prenume, s.nr_matricol, s.an, grupa, data_nastere, bursa
+              ORDER BY puncte DESC NULLS LAST
+       )
+       WHERE ROWNUM < 4
+       ORDER BY puncte
+)
+WHERE ROWNUM < 2;
+
+10)
+
+SELECT nume, prenume, MAX(valoare) nota_maxima, titlu_curs
+FROM studenti s 
+JOIN note n ON s.nr_matricol = n.nr_matricol
+JOIN cursuri c ON n.id_curs = c.id_curs
+GROUP BY nume, prenume, s.nr_matricol, titlu_curs
+HAVING MAX(valoare) = 10;

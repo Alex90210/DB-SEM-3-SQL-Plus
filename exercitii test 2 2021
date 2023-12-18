@@ -1,0 +1,314 @@
+B5
+
+1) Câte denumiri (diferite) de grupe există?
+
+SELECT COUNT(distinct grupa)
+FROM studenti;
+
+2) Afișați numele și mediile notelor studenților din anul 2, care au promovat toate materiile la care au fost notați (promovat o materie ⇔ nota >=5).
+
+SELECT s.nume, TRUNC(AVG(n.valoare), 2)
+FROM studenti s JOIN note n ON s.nr_matricol = n.nr_matricol 
+WHERE an = 2 
+GROUP BY s.nr_matricol, s.nume
+HAVING MIN(n.valoare) >= 5;
+
+3) Afișați numele și prenumele studenților cu cea mai mare medie din facultate.
+
+SELECT s.nume, s.prenume, TRUNC(AVG(valoare), 2)
+FROM studenti s
+JOIN note n ON s.nr_matricol = n.nr_matricol
+GROUP BY s.nume, s.prenume, s.nr_matricol
+HAVING AVG(valoare) = (
+       SELECT MAX(AVG(VALOARE))
+       FROM note
+       GROUP BY nr_matricol
+);
+
+4) Afișați valorile celor mai mari două categorii de burse.
+
+SELECT *
+FROM (
+       SELECT DISTINCT NVL(bursa, 0) b
+       FROM studenti
+       ORDER BY b DESC
+)
+WHERE ROWNUM <= 2;
+
+5) Scrieți o comandă ce actualizează valorile tuturor notelor ca produs dintre valoarea actuală a notei și numărul de credite de la materia respectivă.
+
+UPDATE note n
+SET n.valoare = n.valoare * (
+       SELECT c.credite 
+       FROM cursuri c
+       WHERE n.id_curs = c.id_curs
+);
+
+-> o noua coloana:
+ALTER TABLE note 
+ADD(puncte NUMBER(2));
+
+UPDATE note n SET n.puncte = (
+       SELECT n.valoare * c.credite       
+       FROM cursuri c
+       WHERE n.id_curs = c.id_curs
+);
+
+------------------------------------------------------------------------
+
+A2
+
+1) Aflați câți studenți au fost notați la cursul cu ID-ul “12” și câte valori ale intervalului de notare (note diferite) au fost folosite.
+
+-> pentru afisarea studentilor care au nota la cursul cu id-ul 12s
+SELECT s.nume, s.prenume
+FROM studenti s
+WHERE EXISTS (
+       SELECT 'im alive'
+       FROM note n
+       WHERE s.nr_matricol = n.nr_matricol
+       AND n.id_curs = 12
+);
+
+SELECT COUNT(nr_matricol), COUNT (DISTINCT valoare)
+FROM note
+WHERE id_curs = 12;
+
+2) Pentru cursurile la care s-au pus mai mult de două note afișați media notelor.
+
+SELECT id_curs, TRUNC(AVG(valoare), 2)
+FROM note n
+GROUP BY id_curs
+HAVING id_curs IN (
+       SELECT id_curs
+       FROM note
+       GROUP BY id_curs
+       HAVING COUNT(valoare) >= 2
+);
+
+------- SAU -------
+
+SELECT id_curs, AVG(n.valoare) 
+FROM note n 
+GROUP BY id_curs 
+HAVING COUNT(id_curs) >= 2;
+
+3) Afișați profesorii care predau cele mai multe cursuri.
+
+SELECT p.nume, p.prenume, COUNT(p.id_prof)
+FROM profesori p
+JOIN didactic d ON p.id_prof = d.id_prof
+GROUP BY p.nume, p.prenume, p.id_prof
+HAVING COUNT(p.id_prof) = (
+       SELECT MAX(COUNT(id_prof))
+       FROM didactic 
+       GROUP BY id_prof
+)
+ORDER BY COUNT(p.id_prof) DESC;
+
+4) Afișați id-urile a trei cursuri din lista cursurilor ordonată descrescător după media notelor puse.
+-- Cursurile cu media nula nu se pun, nu?
+
+SELECT *
+FROM (
+       SELECT c.id_curs, TRUNC(AVG(valoare), 2) medie
+       FROM cursuri c
+       JOIN note n ON c.id_curs = n.id_curs
+       GROUP BY c.id_curs
+       ORDER BY medie DESC
+)
+WHERE ROWNUM <= 3;
+
+----- nu e nevoie de JOIN -----
+
+SELECT * 
+FROM (
+       SELECT id_curs, AVG(valoare) 
+       FROM note 
+       GROUP BY id_curs 
+       ORDER BY AVG(valoare) DESC
+) 
+WHERE ROWNUM <=3
+
+5.2) Scrieți o comandă de actualizare ce modifică numele studenților al căror nume se repetă prin adăugarea la finalul acestuia a unei stelute (‘*’).
+
+UPDATE studenti
+SET nume = CONCAT(nume, '*')
+WHERE nume IN (
+       SELECT nume
+       FROM studenti
+       GROUP BY nume
+       HAVING COUNT(nr_matricol) >= 2
+);
+
+5.1) Scrieți o comandă care să actualizeze fiecare student și să îi pună drept bursă valoarea obținută prin înmulțirea mediei notelor cu 100. Pentru studenții care nu au nicio notă, bursa va fi 0.
+
+UPDATE studenti s
+SET bursa = NVL(100 * (
+       SELECT AVG(valoare)
+       FROM note n
+       WHERE s.nr_matricol = n.nr_matricol
+       GROUP BY n.nr_matricol
+), 0);
+
+------------------------------------------------------------------------
+
+B4
+
+1) Aflați câte denumiri de grupe există.
+
+SELECT COUNT(DISTINCT grupa) "Nr Grupe" 
+FROM studenti;
+
+2) Pentru grupele unde există mai mult de 2 studenți bursieri, afișați grupa, numărul total de studenți și numărul de studenți bursieri.
+
+SELECT grupa, COUNT(*), COUNT(bursa)
+FROM studenti
+WHERE grupa IN (
+       SELECT grupa
+       FROM studenti
+       GROUP BY grupa
+       HAVING COUNT(bursa) > 2
+)
+GROUP BY an, grupa;
+
+---
+
+SELECT grupa, COUNT(nr_matricol), COUNT(bursa) 
+FROM studenti 
+GROUP BY an, grupa 
+HAVING COUNT(bursa) > 2;
+
+
+3) Afișați numele și prenumele studenților care au fost notați/evaluați la cele mai multe cursuri.
+
+SELECT s.nume, s.prenume
+FROM studenti s
+JOIN note n ON s.nr_matricol = n.nr_matricol
+GROUP BY s.nume, s.prenume, s.nr_matricol
+HAVING COUNT(valoare) = (
+       SELECT MAX(COUNT(*))
+       FROM note n
+       GROUP BY n.nr_matricol
+);
+
+4) Afișați primii 3 studenți din lista acestora sortată după bursă și an.
+
+SELECT *
+FROM (
+       SELECT *
+       FROM studenti
+       ORDER BY bursa, an
+)
+WHERE ROWNUM < 4;
+
+5) Scrieți o comanda de actualizare care setează numărul de credite a fiecărui curs ca fiind 10 minus partea întreaga (obținută prin trunchiere) a mediei notelor la acel curs.
+
+UPDATE cursuri c
+SET c.credite = 10 - ( -- nu poti folosi floor pentru tot sub-query-ul
+       SELECT TRUNC(AVG(valoare), 0)
+       FROM note n
+       GROUP BY n.id_curs
+       HAVING n.id_curs = c.id_curs
+);
+
+--- Altele:
+
+1) Afisati numarul de cursuri si numarul de credite diferite.
+
+SELECT COUNT(id_curs), COUNT(DISTINCT credite)
+FROM cursuri;
+
+2) Afisati grupele in care media notelor tuturor studentilor este mai mare de 7. O grupa este este identificata de combinatia grupa an. 
+
+SELECT s.grupa, s.an, TRUNC(AVG(valoare), 2) 
+FROM studenti s
+JOIN note n ON s.nr_matricol = n.nr_matricol
+GROUP BY an, grupa
+HAVING AVG(n.valoare) > 7;
+
+3) Afisati titlul cursurilor pentru care numarul de studenti notati/evaluati este maxim.
+
+SELECT c.titlu_curs 
+FROM cursuri c
+WHERE id_curs IN (
+       SELECT id_curs
+       FROM note 
+       GROUP BY id_curs
+       HAVING COUNT(id_curs) = (
+              SELECT MAX(COUNT(id_curs))
+              FROM note
+              GROUP BY id_curs
+       )
+);
+
+4) Afisati numele si prenumele primilor 3 studenti ordonati alfabetic dupa nume si dupa prenume.
+
+SELECT * 
+FROM (
+       SELECT s.nume, s.prenume
+       FROM studenti s
+       ORDER BY s.nume, s.prenume
+)
+WHERE ROWNUM < 4;
+
+5) Scrieti comanda de actualizare ce modifica valorile din coloana bursa astfel: daca studentul are o nota mai mica decat 5 noua bursa este 0.
+
+UPDATE studenti s
+SET bursa = 0 
+WHERE s.nr_matricol IN (
+       SELECT nr_matricol
+       FROM note n
+       WHERE s.nr_matricol = n.nr_matricol
+       AND valoare < 5
+);
+
+--- SAU
+
+UPDATE studenti s
+SET bursa = 0 
+WHERE (
+       SELECT MIN(valoare) 
+       FROM note n 
+       WHERE s.nr_matricol = n.nr_matricol
+) < 5;
+
+--- De la Varlan:
+
+1) Afișați numele și prenumele tuturor colegilor având drept coleg de grupă pe studentul cu cea mai mare medie din facultate.
+
+SELECT nume, prenume
+FROM studenti
+WHERE (grupa,an) = (
+       SELECT s.grupa, s.an
+       FROM studenti s
+       JOIN note n ON s.nr_matricol = n.nr_matricol
+       GROUP BY s.nr_matricol, s.an, s.grupa
+       HAVING AVG(n.valoare) = (
+              SELECT MAX(AVG(n2.valoare))
+              FROM note n2
+              GROUP BY n2.nr_matricol))
+AND nr_matricol != (
+       SELECT nr_matricol
+       FROM note n3
+       GROUP BY n3.nr_matricol
+       HAVING AVG(n3.valoare) = (
+              SELECT MAX(AVG(n4.valoare))
+              FROM note n4
+              GROUP BY n4.nr_matricol)
+);
+
+
+2) Afișați unic numele și prenumele profesorilor având același grad didactic ca și primul profesor din ordonarea alfabetică (după nume + prenume).
+
+SELECT nume, prenume, grad_didactic
+FROM profesori p
+WHERE grad_didactic = (
+       SELECT *
+       FROM (
+              SELECT grad_didactic
+              FROM profesori
+              ORDER BY nume, prenume
+       )
+       WHERE ROWNUM < 2
+);

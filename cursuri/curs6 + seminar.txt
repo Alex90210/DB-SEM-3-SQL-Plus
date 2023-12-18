@@ -1,0 +1,134 @@
+1. where functioneaza doar la nivel de output dupa select, nu poti
+folosi functii in ramura where.
+2. group by colapseaza toate liniile dupa o anumita coloana,
+in cazul in caare valorea coloanei este egala.
+3. functiile de agregare au nevoie de group by, daca selectul afiseaza mai multe coloane, 
+pentru coloanele respective.
+
+1)
+
+SELECT COUNT(*) FROM studenti
+GROUP BY an;
+
+2)
+
+SELECT an, grupa, COUNT(*) FROM studenti
+GROUP BY an, grupa
+ORDER BY an, grupa;
+
+3)
+
+SELECT an, grupa, COUNT(*), COUNT(bursa) FROM studenti
+GROUP BY an, grupa
+ORDER BY an, grupa;
+
+4)
+
+5)
+
+SELECT AVG(SUM(NVL(bursa, 0))) "bursa/cap" FROM studenti
+GROUP BY nr_matricol;
+
+6)
+
+SELECT COUNT(valoare), valoare FROM note
+GROUP BY valoare;
+
+7)
+
+SELECT COUNT(valoare), TO_CHAR(data_notare, 'day') FROM note
+GROUP BY TO_CHAR(data_notare, 'day')
+ORDER BY COUNT(valoare);
+
+8)
+
+SELECT COUNT(valoare), TO_CHAR(data_notare, 'day') FROM note
+GROUP BY TO_CHAR(data_notare, 'day')
+ORDER BY TO_CHAR(data_notare, 'd');
+
+9)
+
+SELECT studenti.nr_matricol, AVG(valoare) FROM note
+JOIN studenti on note.nr_matricol = studenti.nr_matricol
+GROUP BY note.nr_matricol
+ORDER BY AVG(valoare) DESC;
+
+10)
+
+SELECT nvl(AVG(valoare), 0) FROM note
+GROUP BY nr_matricol
+ORDER BY nvl(AVG(valoare), 0);
+
+11)
+
+SELECT NVL(valoare, 0) FROM note
+where valoare is null
+GROUP BY nr_matricol;
+
+13)Afișați numele, cea mai mare notă, cea mai mică notă și media doar pentru acei studenti care au primit doar note mai mari sau egale cu 7 (au cea mai mică notă mai mare sau egală cu 7).
+
+SELECT s.nume, s.prenume, MAX(n.valoare) as max_valoare, MIN(n.valoare) as min_valoare,
+       AVG(n.valoare) as avg_valoare
+FROM studenti s
+JOIN note n ON s.nr_matricol = n.nr_matricol
+GROUP BY s.nume, s.prenume, s.nr_matricol
+HAVING MIN(valoare) < 6;
+
+14)Afișați numele și mediile studenților care au cel puțin un număr de 3 note puse în catalog.
+
+SELECT s.nume, s.prenume, AVG(valoare) FROM studenti s
+JOIN note n on s.nr_matricol = n.nr_matricol
+GROUP BY s.nume, s.prenume, s.nr_matricol
+HAVING COUNT(valoare) > 2;
+
+15)
+
+SELECT nume, prenume, avg(valoare) FROM studenti s
+JOIN note n on s.nr_matricol = n.nr_matricol
+GROUP BY nume, prenume, s.nr_matricol
+HAVING COUNT(DISTINCT valoare) > 2;
+
+16)
+
+SELECT nume, avg(valoare) FROM studenti s
+JOIN note n on s.nr_matricol = n.nr_matricol
+WHERE an = 3 AND grupa = 'A2'
+GROUP BY nume, prenume, s.nr_matricol;
+
+17)
+
+SELECT nume as sef_p, avg(valoare) FROM studenti s
+JOIN note n1 on s.nr_matricol = n1.nr_matricol
+ORDER BY valoare
+GROUP BY nume, prenume, s.nr_matricol;
+
+
+Let G = (V, E) be a digraph, w : E → R+ be a cost function on its edges, and x, y ∈ V two distinct vertices of G; let P be any of the shortest xy-paths in G. We need to prove that Dijkstra's algorithm can find this shortest path if in the updating phase we replace ”>” by ”⩾” and we accept at random one of the candidates for the update.
+
+To prove this, we will show that the modified algorithm satisfies the conditions of Dijkstra's algorithm. The conditions are:
+
+1. The distance to the source vertex is 0.
+2. The distance to any other vertex is the minimum distance from the source vertex.
+3. Once a vertex is visited, its distance is fixed.
+
+The modified algorithm is as follows:
+
+for (j∈V\S) do
+       if (uj ⩾ uj∗ + aj∗j ) then 
+       {uj ← uj∗ + aj∗j;
+        before[j] ← j∗};
+       end if
+end for
+
+We will show that the modified algorithm satisfies the above conditions.
+
+1. The distance to the source vertex is 0: This is true since the distance to the source vertex is initialized to 0 in the algorithm.
+2. The distance to any other vertex is the minimum distance from the source vertex: This is true since the algorithm selects the vertex with the minimum distance from the source vertex at each step. Since the algorithm uses the ”⩾” operator instead of ”>”, it will also consider vertices that have the same distance as the minimum distance. Therefore, the algorithm will consider all vertices that have the minimum distance from the source vertex, and will select one of them at random.
+3. Once a vertex is visited, its distance is fixed: This is true since the algorithm only updates the distance of a vertex if the new distance is less than or equal to the current distance. Therefore, once a vertex is visited, its distance is fixed.
+
+Therefore, the modified algorithm satisfies the conditions of Dijkstra's algorithm, and will find the shortest path from x to y.
+
+Source: Conversation with Bing, 11/9/2023
+(1) Proof for Dijkstra’s Algorithm - UC Davis. https://web.cs.ucdavis.edu/~amenta/w10/dijkstra.pdf.
+(2) Data Structures and Algorithms: Dijkstra's Algorithm - Proof - Auckland. https://www.cs.auckland.ac.nz/software/AlgAnim/dij-proof.html.
+(3) Dijkstra - finding shortest paths from given vertex - Algorithms for .... https://cp-algorithms.com/graph/dijkstra.html.

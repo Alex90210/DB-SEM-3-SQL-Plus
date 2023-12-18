@@ -1,0 +1,55 @@
+1) Cate semestre tine facultatea?
+
+SELECT COUNT(DISTINCT semestru || an)
+FROM cursuri; 
+
+2) Afisati numele cursurilor predate de mai mult de un profesor.
+
+SELECT titlu_curs 
+FROM cursuri c
+JOIN didactic d ON c.id_curs = d.id_curs
+GROUP BY c.id_curs, titlu_curs
+HAVING COUNT(id_prof) >= 2;
+
+3) Afisati numele, prenumele profesorilor care predau macar un curs in anul 3.
+utilizarea cuvantului cheie 'distinct' sau afisarea duplicatelor duce la anularea punctajului.
+-- cum afisez distinct? cu group by
+
+SELECT nume, prenume
+FROM profesori p
+JOIN didactic d ON p.id_prof = d.id_prof
+JOIN cursuri c ON d.id_curs = c.id_curs
+WHERE an = 3
+GROUP BY nume, prenume;
+
+
+4) Afisati al treilea student ca varsta.
+
+SELECT *
+FROM (
+       SELECT * 
+       FROM (
+              SELECT *
+              FROM studenti 
+              ORDER BY data_nastere
+       )
+       WHERE ROWNUM <= 3
+       ORDER BY data_nastere DESC
+)
+WHERE ROWNUM = 1;
+
+5) Actualizeaza coloana bursa in asa fel incat fiecare student sa primesca media sa * 100 ca valoare.
+
+UPDATE studenti s
+SET bursa = 100 * (
+       SELECT AVG(valoare)
+       FROM note n
+       WHERE s.nr_matricol = n.nr_matricol -- vizualizeaza asta
+)
+ORDER BY nume, prenume;
+
+SELECT AVG(valoare)
+FROM studenti s
+JOIN note n ON s.nr_matricol = n.nr_matricol
+GROUP BY s.nr_matricol
+ORDER BY nume, prenume;

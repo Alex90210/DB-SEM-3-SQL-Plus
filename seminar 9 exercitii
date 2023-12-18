@@ -1,0 +1,203 @@
+1)
+
+SELECT nume, prenume, data_nastere, an
+FROM studenti s1
+WHERE EXISTS (
+    SELECT *
+    FROM studenti s2
+    WHERE s1.an = s2.an AND s1.data_nastere > s2.data_nastere
+    GROUP BY an
+);
+
+2)
+
+SELECT nume, prenume, AVG(valoare), an
+FROM studenti s1
+JOIN note n1 ON s1.nr_matricol = n1.nr_matricol
+GROUP BY nume, prenume, s1.nr_matricol, an
+HAVING avg(n1.valoare) > (
+    SELECT AVG(valoare)
+    FROM studenti s2
+    JOIN note n2 on s2.nr_matricol = s2.nr_matricol
+    GROUP BY an 
+    HAVING s1.an = s2.an
+)
+ORDER BY an;
+
+3)
+
+SELECT nume, prenume, grupa, an
+FROM studenti s1 
+JOIN note n1 ON s1.nr_matricol = n1.nr_matricol
+GROUP BY nume, prenume, s1.nr_matricol, grupa, an
+HAVING AVG(valoare) = (
+    SELECT MAX(AVG(valoare))
+    FROM studenti s2
+    JOIN note n2 ON s2.nr_matricol = n2.nr_matricol
+    GROUP BY an, grupa, s2.nr_matricol
+    HAVING s1.grupa = s2.grupa
+    AND s1.an = s2.an
+); 
+
+4)
+
+Găsiţi toţi studenţii care au măcar un coleg în acelaşi an care să fi luat aceeaşi nota ca şi el la măcar o materie.
+
+SELECT nume, prenume
+FROM studenti s1
+JOIN note n1 ON s1.nr_matricol = n1.nr_matricol
+WHERE EXISTS (
+    SELECT 'JOE BIDEN'
+    FROM studenti s2
+    JOIN note n2 ON s2.nr_matricol = n2.nr_matricol
+    WHERE n1.valoare = n2.valoare
+    AND n1.id_curs = n2.id_curs
+    AND s1.an = s2.an
+)
+GROUP BY nume, prenume, s1.nr_matricol;
+
+SELECT nume, prenume, valoare, an
+FROM studenti s2
+JOIN note n2 ON s2.nr_matricol = n2.nr_matricol
+ORDER BY an, nume;
+
+
+SELECT COUNT(*)
+FROM (
+    SELECT COUNT(*) FROM studenti
+    GROUP BY AN
+);
+
+5) Afișați toți studenții care sunt singuri în grupă (nu au alți colegi în aceeași grupă).
+
+SELECT nume, prenume
+FROM studenti s
+WHERE EXISTS (
+    SELECT 'OLA'
+    FROM studenti c
+    GROUP BY an, grupa
+    HAVING COUNT(*) = 1
+    AND s.grupa = c.grupa
+);
+
+SQL> desc note;
+ Name                                      Null?    Type
+ ----------------------------------------- -------- ----------------------------
+ NR_MATRICOL                                        CHAR(6)
+ ID_CURS                                            CHAR(4)
+ VALOARE                                            NUMBER(2)
+ DATA_NOTARE                                        DATE
+
+SQL> desc didactic
+ Name                                      Null?    Type
+ ----------------------------------------- -------- ----------------------------
+ ID_PROF                                            CHAR(4)
+ ID_CURS                                            CHAR(4)
+
+SQL> desc profesori;
+ Name                                      Null?    Type
+ ----------------------------------------- -------- ----------------------------
+ ID_PROF                                            CHAR(4)
+ NUME                                               CHAR(10)
+ PRENUME                                            CHAR(10)
+ GRAD_DIDACTIC                                      VARCHAR2(5)
+
+6) Afișați profesorii care au măcar un coleg (profesor) ce are media notelor puse la fel ca și el.
+
+SELECT nume, prenume --- MUST BE IN GROUP BY
+FROM profesori p
+JOIN didactic d ON p.id_prof = d.id_prof
+JOIN note n ON d.id_curs = n.id_curs
+GROUP BY nume, prenume, p.id_prof
+HAVING AVG(valoare) IN (
+    SELECT AVG(valoare)
+    FROM profesori p1
+    JOIN didactic d1 ON p1.id_prof = d1.id_prof
+    JOIN note n1 ON d1.id_curs = n1.id_curs
+    where p.id_prof != p1.id_prof
+    GROUP BY p1.id_prof
+);
+
+--- Mediile tuturor profesorilor:
+
+SELECT DISTINCT p.nume, p.prenume, TRUNC(AVG(valoare), 2)
+FROM profesori p
+JOIN didactic d ON p.id_prof = d.id_prof
+JOIN note n ON d.id_curs = n.id_curs
+GROUP BY nume, prenume, p.id_prof
+ORDER BY TRUNC(AVG(valoare), 2);
+
+GPT4:
+
+SELECT p.nume, p.prenume
+FROM profesori p
+JOIN didactic d ON p.id_prof = d.id_prof
+JOIN note n ON d.id_curs = n.id_curs
+WHERE EXISTS (
+    SELECT 1
+    FROM profesori p1
+    JOIN didactic d1 ON p1.id_prof = d1.id_prof
+    JOIN note n1 ON d1.id_curs = n1.id_curs
+    WHERE p1.id_prof != p.id_prof
+    GROUP BY p1.id_prof
+    HAVING TRUNC(AVG(n1.valoare), 2) = TRUNC(AVG(n.valoare), 2)
+)
+
+SQL> desc note;
+ Name                                      Null?    Type
+ ----------------------------------------- -------- ----------------------------
+ NR_MATRICOL                                        CHAR(6)
+ ID_CURS                                            CHAR(4)
+ VALOARE                                            NUMBER(2)
+ DATA_NOTARE                                        DATE
+
+SQL> desc studenti;
+ Name                                      Null?    Type
+ ----------------------------------------- -------- ----------------------------
+ NR_MATRICOL                               NOT NULL CHAR(6)
+ NUME                                               VARCHAR2(10)
+ PRENUME                                            VARCHAR2(10)
+ AN                                                 NUMBER(1)
+ GRUPA                                              CHAR(2)
+ BURSA                                              NUMBER(6,2)
+ DATA_NASTERE                                       DATE
+
+7) Fara a folosi join, afisati numele si media fiecarui student.
+
+SELECT s.nume, s.prenume, (
+    SELECT TRUNC(AVG(valoare), 2)
+    FROM note n
+    WHERE s.nr_matricol = n.nr_matricol
+) medie
+FROM studenti s
+--- urmatoarea parte este doar pentru a exclude studentii fara note
+WHERE EXISTS (
+    SELECT 1 
+    FROM note n
+    WHERE n.nr_matricol = s.nr_matricol
+);
+
+8) Afisati cursurile care au cel mai mare numar de credite din fiecare an (pot exista si mai multe pe an). - Rezolvati acest exercitiu si corelat si necorelat (se poate in ambele moduri). Care varianta este mai eficienta?
+
+-- necorelat:
+
+SELECT c.titlu_curs
+FROM cursuri c
+WHERE c.credite = (
+    SELECT MAX(credite)
+    FROM cursuri c1
+    WHERE c.an = c1.an
+    -- GROUP BY an; am nevoie de grupare? Nu.
+);
+
+-- corelat: 
+
+SELECT c.titlu_curs
+FROM cursuri c
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM cursuri c1
+    WHERE c.credite < c1.credite
+    AND c.id_curs != c1.id_curs
+    AND c.an = c1.an
+);

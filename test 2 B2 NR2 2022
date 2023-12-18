@@ -1,0 +1,51 @@
+1) Afisati numarul total de cursuri si in cate categorii se impart ele din puncte de vedere a creditelor alocate.
+
+SELECT COUNT(*), COUNT(DISTINCT credite)
+FROM cursuri;
+
+2) Afisati id-urile acelor cursuri care sunt predate de macar 2 profesori.
+
+SELECT c.id_curs
+FROM cursuri c
+JOIN didactic d ON c.id_curs = d.id_curs
+JOIN profesori p ON d.id_prof = p.id_prof
+GROUP BY c.id_curs
+HAVING COUNT(*) >= 2;
+
+3) Afisati studentul/studentii cu cea mai mare nota la baze de date.
+
+--- ambele query-uri trebuie filtrate dupa curs ?
+
+SELECT nume, prenume
+FROM studenti s
+JOIN note n ON s.nr_matricol = n.nr_matricol
+JOIN cursuri c ON n.id_curs = c.id_curs
+WHERE c.titlu_curs = 'BD' 
+AND n.valoare = (
+          SELECT MAX(valoare)
+          FROM note
+          JOIN cursuri ON note.id_curs = cursuri.id_curs
+          WHERE cursuri.titlu_curs = 'BD'
+);
+
+4) Afisati cele mai frecvente 2 note. In caz de egalitate afisati notele mai mari.
+
+SELECT *
+FROM (
+       SELECT valoare, COUNT(*)
+       FROM note
+       GROUP BY valoare
+       ORDER BY COUNT(*) DESC, valoare DESC
+)
+WHERE ROWNUM <= 2;
+
+5) Adaugati o steluta la numele studentilor care se repeta.
+
+UPDATE studenti
+SET nume = CONCAT(nume, '*')
+WHERE nume IN (
+       SELECT nume
+       FROM studenti
+       GROUP BY nume
+       HAVING COUNT(*) >= 2
+);

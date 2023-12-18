@@ -1,0 +1,45 @@
+1) Afișați numele studenților care iau cea mai mare bursa acordată.
+
+SELECT nume, prenume, bursa FROM studenti 
+WHERE bursa = (SELECT bursa  
+              FROM studenti
+              where bursa = 450); 
+
+2)
+
+SELECT nume, prenume FROM studenti s
+NATURAL JOIN note n WHERE MIN(valoare) = 
+(SELECT MIN(valoare) FROM studenti s NATURAL JOIN note n WHERE
+)
+
+SELECT nume, prenume FROM studenti s
+JOIN note n ON s.nr_matricol = n.nr_matricol
+WHERE s.nr_matricol = (SELECT nr_matricol FROM note
+GROUP BY(nr_matricol))
+GROUP BY (an, grupa);
+
+SELECT nume, prenume
+    FROM studenti s, note n
+    WHERE s.nr_matricol=n.nr_matricol and valoare = 
+          (SELECT MIN(valoare)
+              FROM studenti s, note n
+              WHERE s.nr_matricol=n.nr_matricol)
+              GROUP BY(grupa, an)
+    ORDER BY nume, prenume;
+
+
+SELECT nr_matricol, MIN(valoare) FROM note
+GROUP BY(nr_matricol);
+
+Select distinct nume,grupa,an from studenti s 
+join note n on s.nr_matricol=n.nr_matricol and 
+(grupa,valoare,an) in (Select grupa, min(valoare), an 
+from studenti s, note n  where s.nr_matricol=n.nr_matricol 
+group by grupa,an) order by an desc;
+
+4)
+-- SELECT AVG(valoare) FROM note;
+SELECT nume, prenume,FROM studenti s
+JOIN note n ON s.nr_matricol = s.nr_matricol
+and valoare > (SELECT AVG(valoare) FROM note)
+GROUP BY s.nr_matricol, nume, prenume;

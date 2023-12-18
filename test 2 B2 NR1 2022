@@ -1,0 +1,46 @@
+1) Afisati numarul de studenti si numarul de ani din tabela studenti;
+
+SELECT COUNT(nr_matricol), COUNT (DISTINCT an)
+FROM studenti;
+
+2) Afisati numele care se repeta si numarul de repetitii.
+
+SELECT nume, COUNT(*) 
+FROM studenti s
+GROUP BY nume
+HAVING COUNT(*) >= 2;
+
+3) Afisati grupa/grupele cu cei mai multi studenti.
+
+SELECT grupa, an, COUNT(*)
+FROM studenti s
+GROUP BY grupa, an
+HAVING COUNT(*) = (
+       SELECT MAX(COUNT(*))
+       FROM studenti
+       GROUP BY an, grupa
+);
+
+4) Afisati primii 3 cei mai buni studenti la materia 'baze de date'. Daca exista nume egale se va considera ordinea alfabetica.
+
+SELECT *
+FROM (
+       SELECT nume, prenume, valoare
+       FROM studenti s
+       JOIN note n ON s.nr_matricol = n.nr_matricol
+       JOIN cursuri c ON n.id_curs = c.id_curs
+       WHERE c.titlu_curs = 'BD'
+       ORDER BY valoare DESC, nume
+)
+WHERE ROWNUM <= 3;
+
+5) Sa se face update bursei ca fiind 50 * media numai pentru cei care au cea mai mica nota >= 5;
+
+UPDATE studenti s
+SET bursa = 50 * (
+       SELECT AVG(valoare)
+       FROM note n
+       GROUP BY nr_matricol
+       HAVING s.nr_matricol = n.nr_matricol
+       AND MIN(valoare) >= 5
+);
