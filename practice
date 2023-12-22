@@ -1,6 +1,14 @@
-update studenti s
-set bursa = 100 * (
-       select avg(valoare)
-       from note n
-       where s.nr_matricol = n.nr_matricol 
+3) SELECTEAZA STUDENTII CU CEA MAI MARE BURSA DIN FIECARE AN.
+
+SELECT nume, prenume, an, bursa 
+FROM studenti S1
+GROUP BY nume, prenume, an, bursa, nr_matricol
+HAVING nr_matricol IN (
+       SELECT nr_matricol
+       FROM STUDENTI S2
+       WHERE BURSA = (
+              SELECT MAX(BURSA)
+              FROM STUDENTI
+       )
+       AND S1.AN = S2.AN
 )
